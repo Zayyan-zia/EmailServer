@@ -1,44 +1,56 @@
-const express = require('express')
-const nodemailer = require('nodemailer')
-require("dotenv").config()
-const app = express()
+const express = require('express');
+const nodemailer = require('nodemailer');
+require("dotenv").config();
 const crypto = require('crypto');
-const transport =nodemailer.createTransport({
-  host: 'smtp.gmail.com',         
+
+const app = express();
+
+const transport = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
   port: 465,
   secure: true,
   auth: {
-    user: process.env.EmailTo,
-    pass: process.env.Passkey, 
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASSWORD
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
-app.get('/',(req,res)=>{
+
+// Verify SMTP (VERY IMPORTANT)
+transport.verify((err) => {
+  if (err) console.log("SMTP ERROR:", err);
+  else console.log("SMTP READY ✅");
+});
+
+app.get('/', (req, res) => {
   const password = crypto.randomBytes(4).toString('hex');
-  res.send(`Your password is ${password}`)
-})
-app.get('/sendEmail',async(req,res)=>{
-     let email=({
-      from:'zstyles053@gmail.com',
-      to:"zayyanzia153@gmail.com",
-      subject:'Thanks For Sign in',
-      text:`Hi Dear,
-
-Welcome back to Shopie !
-
-We're excited to have you again join our community. Your account has been successfully login, and you're now ready to explore everything we have to offer.
-
-If you have any questions or need help, feel free to reply to this email.
-`
+  res.send(`Your password is ${password}`);
 });
-transport.sendMail(email,(err,info)=>{
-  if(err){
-   res.send("Error Occur!")
-  }
-  else{
-    res.send("successfully sent!")
-  }
-})
-})
-app.listen(3001,()=>{
+
+app.get('/sendEmail', async (req, res) => {
+  const email = {
+    from: `"Shopie" <${process.env.EMAIL}>`,
+    to: "zayyanzia153@gmail.com",
+    subject: 'Thanks For Sign in',
+    text: `Hi Dear,
+
+Welcome back to Shopie!
+
+Your account has been successfully logged in.
+`
+  };
+
+  transport.sendMail(email, (err, info) => {
+    if (err) {
+      console.log("EMAIL ERROR:", err);
+      return res.status(500).send(err.message);
+    }
+    res.send("Successfully sent!");
+  });
+});
+
+app.listen(3001, () => {
   console.log('Running on port 3001');
-})
+});
